@@ -5,11 +5,23 @@ import type { RouterOutputs } from "~/utils/api";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
+import { LoadingPage } from "~/components/loading";
+import { useState } from "react";
 
 dayjs.extend(relativeTime);
 
 const CreatePostWizard = () => {
   const { user } = useUser();
+  const ctx = api.useContext();
+
+  const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
+    onSuccess: () => {
+      setInput("");
+      ctx.posts.getAll.invalidate();
+    }
+  });
+
+  const [input, setInput] = useState<string>("");
 
   if (!user) return null;
 
@@ -25,7 +37,11 @@ const CreatePostWizard = () => {
       <input
         className="grow bg-transparent p-2 outline-none"
         placeholder="Type some emojis :D"
+        onChange={(e) => setInput(e.target.value)}
+        disabled={isPosting}
+        value={input}
       />
+      <button onClick={() => mutate({ content: input })}>Post</button>
     </div>
   );
 };
@@ -51,19 +67,36 @@ const PostView = (props: PostWithUser) => {
             {dayjs(post.createdAt).fromNow()}
           </span>
         </div>
-        <div>{post.content}</div>
+        <div className="text-xl">{post.content}</div>
       </div>
     </div>
   );
 };
 
-export default function Home() {
-  const user = useUser();
-  const { data, isLoading } = api.posts.getAll.useQuery();
+const Feed = () => {
+  const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
 
-  if (isLoading) return <div>Loading...</div>;
+  if (postsLoading) return <LoadingPage />;
 
   if (!data) return <div>Something went wrong.</div>;
+
+  return (
+    <div className="flex flex-col">
+      {data.map((d) => (
+        <PostView {...d} key={d.post.id} />
+      ))}
+    </div>
+  );
+};
+
+export default function Home() {
+  const { user, isSignedIn, isLoaded: userLoaded } = useUser();
+
+  // start fetching early and use cache later in Feed component
+  api.posts.getAll.useQuery();
+
+  // return empty div since user tends to load fast
+  if (!userLoaded) return <div />;
 
   return (
     <>
@@ -73,16 +106,12 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex h-screen justify-center">
-        <section className="h-full w-full border-x border-slate-400 md:max-w-2xl">
+        <section className="flex h-full w-full flex-col border-x border-slate-400 md:max-w-2xl">
           <div className="flex border-b border-slate-400 p-4">
-            {!user.isSignedIn && <SignInButton />}
-            {!!user.isSignedIn && <CreatePostWizard />}
+            {!isSignedIn && <SignInButton />}
+            {!!isSignedIn && <CreatePostWizard />}
           </div>
-          <div className="flex flex-col">
-            {data.map((d) => (
-              <PostView {...d} key={d.post.id} />
-            ))}
-          </div>
+          <Feed />
         </section>
       </main>
     </>
