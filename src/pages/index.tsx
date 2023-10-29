@@ -8,6 +8,7 @@ import Image from "next/image";
 import { LoadingPage, LoadingSpinner } from "~/components/loading";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 dayjs.extend(relativeTime);
 
@@ -22,7 +23,7 @@ const CreatePostWizard = () => {
     },
     onError: (e) => {
       const errorMessage = e.data?.zodError?.fieldErrors.content;
-      if ((errorMessage)?.[0]) {
+      if (errorMessage?.[0]) {
         toast.error(errorMessage[0]);
       } else {
         toast.error("Failed to post. Please try again later.");
@@ -51,7 +52,7 @@ const CreatePostWizard = () => {
           if (e.key == "Enter") {
             e.preventDefault();
             if (input !== "") {
-              mutate({content: input})
+              mutate({ content: input });
             }
           }
         }}
@@ -65,7 +66,7 @@ const CreatePostWizard = () => {
       )}
       {isPosting && (
         <div className="flex items-center justify-center">
-          <LoadingSpinner size={20}/>
+          <LoadingSpinner size={20} />
         </div>
       )}
     </div>
@@ -87,11 +88,13 @@ const PostView = (props: PostWithUser) => {
       />
       <div className="flex flex-col">
         <div className="text-slate-400">
-          {`@${author.username}`}
-          <span className="font-thin">
-            {" • "}
-            {dayjs(post.createdAt).fromNow()}
-          </span>
+          <Link href={`/@${author.username}`}>{`@${author.username}`}</Link>
+          <Link href={`/post/${post.id}`}>
+            <span className="font-thin">
+              {" • "}
+              {dayjs(post.createdAt).fromNow()}
+            </span>
+          </Link>
         </div>
         <div className="text-xl">{post.content}</div>
       </div>
