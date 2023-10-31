@@ -1,19 +1,11 @@
 import { clerkClient } from "@clerk/nextjs";
 import { createTRPCRouter, privateProcedure, publicProcedure } from "../trpc";
 import { z } from "zod";
-import { User } from "@clerk/nextjs/dist/types/server";
+import type { User } from "@clerk/nextjs/dist/types/server";
 import { TRPCError } from "@trpc/server";
-
-const filterUserForClient = (user: User) => {
-  return {
-    id: user.id,
-    username: user.username,
-    profileImageUrl: user.imageUrl,
-  };
-};
-
 import { Ratelimit } from "@upstash/ratelimit"; // for deno: see above
 import { Redis } from "@upstash/redis"; // see below for cloudflare and fastly adapters
+import { filterUserForClient } from "~/server/helpers/filterUserForClient";
 
 // Create a new ratelimiter, that allows 3 requests per 1 minute
 const ratelimit = new Ratelimit({
