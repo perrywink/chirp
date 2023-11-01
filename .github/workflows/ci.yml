@@ -26,4 +26,4 @@ jobs:
       run: npm run lint # Adjust your npm script name for linting
 
     - name: Print Environment Variable
-        run: echo $MY_ENV_VAR
+      run: echo $DATABASE_URL
